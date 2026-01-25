@@ -26,3 +26,155 @@
         font-size: 1.5rem;
         padding: 10px;
         overflow-y: auto;
+        word-wrap: break-word;
+        border-radius: 5px;
+        margin: 10px 0;
+    }
+    .keyboard {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        max-width: 800px;
+        margin-top: 10px;
+    }
+    .key {
+        background-color: #222;
+        color: white;
+        font-size: 2rem;
+        padding: 20px;
+        margin: 5px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        min-width: 60px;
+        text-align: center;
+        user-select: none;
+    }
+    .key:active {
+        transform: scale(0.95);
+        background-color: #555;
+    }
+    .controls {
+        margin: 10px 0;
+    }
+    button.control-btn {
+        margin: 0 5px;
+        padding: 10px 15px;
+        font-size: 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div id="textBox" contenteditable="false"></div>
+
+<div class="controls">
+    <button class="control-btn" onclick="setLayout('ABC')">ABC</button>
+    <button class="control-btn" onclick="setLayout('QWERTY')">QWERTY</button>
+    <button class="control-btn" onclick="setLayout('NUM')">Numbers</button>
+    <button class="control-btn" onclick="speakText()">Speak Text</button>
+    <button class="control-btn" onclick="clearText()">Clear Text</button>
+</div>
+
+<div id="keyboard" class="keyboard"></div>
+
+<script>
+const synth = window.speechSynthesis;
+let currentLayout = 'ABC';
+let textBox = document.getElementById('textBox');
+const keyboardDiv = document.getElementById('keyboard');
+
+const layouts = {
+    ABC: [
+        'A','B','C','D','E','F','G','H','I','J',
+        'K','L','M','N','O','P','Q','R','S','T',
+        'U','V','W','X','Y','Z',
+        ',','.','!','?'
+    ],
+    QWERTY: [
+        'Q','W','E','R','T','Y','U','I','O','P',
+        'A','S','D','F','G','H','J','K','L',
+        'Z','X','C','V','B','N','M',
+        ',','.','!','?'
+    ],
+    NUM: [
+        '0','1','2','3','4','5','6','7','8','9',
+        '+','-','×','÷','='
+    ]
+};
+
+function speak(char) {
+    if(!char) return;
+    let utter = new SpeechSynthesisUtterance(char);
+    utter.rate = 1;
+    synth.speak(utter);
+}
+
+function addToText(char) {
+    textBox.textContent += char;
+    speak(char);
+    textBox.scrollTop = textBox.scrollHeight;
+}
+
+function clearText() {
+    textBox.textContent = '';
+}
+
+function speakText() {
+    let utter = new SpeechSynthesisUtterance(textBox.textContent);
+    synth.speak(utter);
+}
+
+function createKeyboard() {
+    keyboardDiv.innerHTML = '';
+    let keys = layouts[currentLayout];
+    keys.forEach(key => {
+        let btn = document.createElement('button');
+        btn.textContent = key;
+        btn.className = 'key';
+        btn.onclick = () => addToText(key);
+        keyboardDiv.appendChild(btn);
+    });
+}
+
+function setLayout(layout) {
+    currentLayout = layout;
+    createKeyboard();
+}
+
+// Initialize default layout
+createKeyboard();
+
+// Listen for physical keyboard input
+document.addEventListener('keydown', (e) => {
+    let char = e.key.toUpperCase();
+
+    // Map special symbols for keyboard input
+    if(currentLayout === 'NUM') {
+        if(['+', '-', '*', '/', '='].includes(char)) {
+            if(char === '*') char = '×';
+            if(char === '/') char = '÷';
+            addToText(char);
+            e.preventDefault();
+            return;
+        }
+        if(/[0-9]/.test(char)) {
+            addToText(char);
+            e.preventDefault();
+            return;
+        }
+    } else {
+        if(/[A-Z,.!?]/.test(char)) {
+            addToText(char);
+            e.preventDefault();
+            return;
+        }
+    }
+});
+</script>
+
+</body>
+</html>
